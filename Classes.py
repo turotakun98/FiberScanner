@@ -26,9 +26,9 @@ class AddressInfo:
         if(found == False):
             newFiberType = FiberType(typeName, typeAvailable, typeMaxSpeed) 
             self.fiberTypes.add(newFiberType)
-            return False;
+            return False
 
-        return alarm;
+        return alarm
 
         
 

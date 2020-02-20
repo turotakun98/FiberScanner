@@ -92,6 +92,36 @@ def jsonToDict(jsonData):
         
     return List
 
+
+def getPageInfo(url):
+        link = url[0]
+        r = requests.get('https://fibermap.it/api/street-number/' + link + '/services')
+        jsonData = r.json()
+        data = jsonData["data"]
+
+        region = data["region"]
+        city = data["city"]
+        shortProvince = data["shortProvince"]
+        province = data["province"]
+        ppn = data["ppn"]
+        street = data["street"]
+        number = data["number"]
+        code = data["code"]
+
+        services = data["service"]
+        message = ""
+
+        for service in services:            
+            types = service["types"]
+            for type in types:
+                typeName = type["name"]
+                typeAvailable = type["available"]
+                typeMaxSpeed = type["maxSpeed"]
+                
+                message += "{}, Disponibile: {}, Vel. Max: {} \n \n".format(typeName, typeAvailable, typeMaxSpeed)
+        
+        return message
+
 def reloadPageInfo(url,mode):
     link = url
 
@@ -116,13 +146,12 @@ def reloadPageInfo(url,mode):
             if(addressInfo.code == code):
                 address = addressInfo
                 found = True
+                break
         
         if(found == False):
             address = Classes.AddressInfo(region,city,shortProvince,province,ppn,street,number,code)
             AddressInfoes.add(address)
 
-        #addess =
-        #Classes.AddressInfo(region,city,shortProvince,province,ppn,street,number,code)
 
         services = data["service"]
 
