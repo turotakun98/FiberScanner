@@ -2,6 +2,9 @@ import json
 import time
 from threading import Lock, Thread
 import requests
+import sys
+
+#import urllib.parse
 from Classes import AddressInfo
 from MonitorFiberMap import (
     getAddressInfo, getCitiesList, getProvinceList, getRegionList,
@@ -34,24 +37,24 @@ def get_updates():
     if(js["ok"] == True):
         leng = len(js["result"])
         if(leng > 0):
-            last_update_id = js["result"][leng - 1]["update_id"] 
+            last_update_id = js["result"][leng - 1]["update_id"]
             last_update_id += 1
-        
+
             #Salvataggio dell'ultimo update_id per impedire la rilettura dell'ultimo messaggio al riavvio del Bot
             #f = open("myfile.txt", "w")
             #f.write(str(last_update_id))
             #f.close()
-    
+
     return js
 
 #Send a message to the specified chat_id (call to Telegram API)
 def send_message(text, chat_id):
     url = URL + "sendMessage?text={}&chat_id={}".format(text, chat_id)
     get_url(url)
- 
+
  #Convert a dictiornary to an inline keyboard
 def dict_to_inline_keyboard(dict,columns):
-    
+
     maxColumnIndex = columns - 1
 
     keyboard = {
@@ -63,7 +66,7 @@ def dict_to_inline_keyboard(dict,columns):
 
     for id,name in dict.items():
         val = {"text": name,"callback_data":str(id)}
-                    
+
         if(colIndex != maxColumnIndex and rowIndex > -1):
             colIndex = colIndex + 1
             keyboard["inline_keyboard"][rowIndex].append(val)
@@ -75,7 +78,7 @@ def dict_to_inline_keyboard(dict,columns):
             button.append(val)
 
             keyboard["inline_keyboard"].append(button)
-    
+
     return keyboard
 
 #Thread scanning for updates (call to Fibermap API)
@@ -99,13 +102,13 @@ def cycle_master():
             #TODO: Send the message with the notification of status change
             time.sleep(100)
     except:
-        #TODO: Send to admin's chat the error message 
+        #TODO: Send to admin's chat the error message
         print("Unexpected error:", sys.exc_info()[0])
         time.sleep(100)
 
 
 if __name__ == '__main__':
-    
+
     tokenFile = open("TOKEN.txt", "r")
     token = tokenFile.read().strip('\n')
 
@@ -124,7 +127,7 @@ if __name__ == '__main__':
                     if(update["message"]["text"] == "/regioni"):
                         region_list = getRegionList()
                         keyboard = dict_to_inline_keyboard(region_list,2)
-                        
+
                         chatId = update["message"]["chat"]["id"]
                         data = {
                             "chat_id": chatId,
@@ -133,11 +136,30 @@ if __name__ == '__main__':
                         }
 
                         urlResponse = URL + "sendMessage"
-                        response = requests.post(url=urlResponse,
-                                data=data).json()
+                        response = requests.post(url=urlResponse, data=data).json()
+
+                    elif("/addinline" in update["message"]["text"]):
+                        fulltext = update["message"]["text"]
+                        fulladdress = fulltext.replace("/addinline", "")
+                        addresslist = fulladdress.split(",")
+
+                        regioni = getRegionList()
+                        regione = addresslist[0].upper().strip()
+                        #TODO FIX COME MAI NON VA??? TIPS: Fatti te un algoritmo di ricerca per prestazioni e ritornare ID
+                        if(regione in regioni.values()):
+                            aaa = ""
+                            province = getProvinceList()
+                            if(addresslist[1].upper().strip() in province):
+                                città = getCitiesList()
+                                if(addresslist[2].upper().strip() in città):
+                                    vie = getSteetsList()
+                                    if(addresslist[3].upper().strip() in vie):
+                                        numeri = getSteetsNumberList()
+                                        if(addresslist[4].upper().strip() in numeri):
+                                            aaa = ""
 
                 if "callback_query" in update:
-                
+
                     #update["callback_query"]["message"]["reply_markup"]["inline_keyboard"]
                     chatId = update["callback_query"]["message"]["chat"]["id"]
                     text = update["callback_query"]["message"]["text"]
@@ -149,15 +171,17 @@ if __name__ == '__main__':
                     data = {
                         "chat_id": chatId,
                         "text" : textRet,
-                        "reply_markup": json.dumps(keyboard)
+                        "reply_markup": json.dumps(keyboard),
+                        "parse_mode": "html"
                     }
-                    
+
                     list = {}
 
                     if(text == "Regioni:"):
+                        idRegion = int(id)
                         list = getProvinceList(idRegion)
                         textRet = "Province:"
-                    
+
                     if(text == "Province:"):
                         list = getCitiesList(id)
                         colCount = 2
@@ -165,7 +189,7 @@ if __name__ == '__main__':
 
                     if(text == "Città:"):
                         list = getSteetsList(id)
-                        colCount = 2   
+                        colCount = 2
                         textRet = "Via:"
 
                     if(text == "Via:"):
@@ -176,7 +200,7 @@ if __name__ == '__main__':
                     if(text == "Numero:"):
                         colCount = 2
                         AddresInfo = getAddressInfo(id)
-                        textRet = "Confermi l'indirizzo: {} {} {} {} {} {} ?".format(AddresInfo.region,AddresInfo.city,AddresInfo.province,AddresInfo.ppn,AddresInfo.street,AddresInfo.number)                    
+                        textRet = "Confermi l'indirizzo: {} {} {} {} {} {} ?".format(AddresInfo.region,AddresInfo.city,AddresInfo.province,AddresInfo.ppn,AddresInfo.street,AddresInfo.number)
                         keyboard = {
                                 "inline_keyboard": [[{"text": "SI","callback_data":AddresInfo.code},{"text": "NO","callback_data":"NO"}]]
                             }
@@ -186,7 +210,7 @@ if __name__ == '__main__':
                         presente = False
 
                         if(id == "NO"):
-                            textRet = "Peccato :<"
+                            textRet = "<b>Peccato :&lt;</b>"
                         else:
                             if(chatId in dictUserCode):
                                 if id not in dictUserCode[chatId]:
@@ -198,17 +222,17 @@ if __name__ == '__main__':
                                 dictUserCode[chatId] = codes
                             if(not presente):
                                 tmpMess = getPageInfo(codes)
-                                textRet = tmpMess + "Aggiunto!!"
+                                textRet = tmpMess + "<b>Aggiunto!!</b>"
 
                             else:
                                 tmpMess = getPageInfo(codes)
-                                textRet = tmpMess + "Già presente!!"
+                                textRet = tmpMess + "<b>Già presente!!</b>"
                     if(text != "Numero:"):
                         keyboard = dict_to_inline_keyboard(list,colCount)
-                        
+
                     data["reply_markup"] = json.dumps(keyboard)
                     data["text"] = textRet
-                    
+
                     urlResponse = URL + "sendMessage"
                     response = requests.post(url=urlResponse, data=data).json()
         time.sleep(2)

@@ -77,10 +77,7 @@ def getAddressInfo(idNumber):
     AddresInfo = Classes.AddressInfo(region,city,shortProvince,province,ppn,street,number,id)
         
     return AddresInfo
-
     
-    return streetNumbersList
-
 def jsonToDict(jsonData):
     colData = jsonData["data"]
     List = {}
@@ -99,14 +96,14 @@ def getPageInfo(url):
         jsonData = r.json()
         data = jsonData["data"]
 
-        region = data["region"]
-        city = data["city"]
-        shortProvince = data["shortProvince"]
-        province = data["province"]
-        ppn = data["ppn"]
-        street = data["street"]
-        number = data["number"]
-        code = data["code"]
+        #region = data["region"]
+        #city = data["city"]
+        #shortProvince = data["shortProvince"]
+        #province = data["province"]
+        #ppn = data["ppn"]
+        #street = data["street"]
+        #number = data["number"]
+        #code = data["code"]
 
         services = data["service"]
         message = ""
@@ -118,7 +115,7 @@ def getPageInfo(url):
                 typeAvailable = type["available"]
                 typeMaxSpeed = type["maxSpeed"]
                 
-                message += "{}, Disponibile: {}, Vel. Max: {} \n \n".format(typeName, typeAvailable, typeMaxSpeed)
+                message += "<b>{}</b>, Disponibile: {}, Vel. Max: {} \n \n".format(typeName, typeAvailable, typeMaxSpeed)
         
         return message
 
